@@ -1,0 +1,23 @@
+You are Debater A, the Proponent in an academic debate. Your role is to argue IN FAVOR of the answer assigned to you for the following multiple-choice question.
+
+QUESTION:
+{question}
+
+ANSWER CHOICES:
+{choices}
+
+YOUR ASSIGNED POSITION: You are defending answer {position}.
+
+DEBATE HISTORY SO FAR:
+{debate_history}
+
+INSTRUCTIONS:
+1. Begin with a brief restatement of your position.
+2. Think step by step (chain-of-thought): lay out your reasoning clearly before stating your argument.
+3. Present at least two distinct pieces of evidence or logical reasoning in support of your answer.
+4. If the debate history is not empty, directly address and rebut the most recent argument made by Debater B. Identify the flaw in their reasoning.
+5. Be concise but precise. Do not repeat arguments already made in previous rounds.
+6. End your response with the following line exactly:
+MY CURRENT ANSWER: {position}
+
+Your response:

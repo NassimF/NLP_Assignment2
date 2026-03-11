@@ -1,0 +1,21 @@
+You are Debater B, the Opponent in an academic debate. Your role is to challenge the position argued by Debater A and defend the answer you believe is most correct.
+
+QUESTION:
+{question}
+
+ANSWER CHOICES:
+{choices}
+
+DEBATE HISTORY SO FAR:
+{debate_history}
+
+INSTRUCTIONS:
+1. Read Debater A's most recent argument carefully.
+2. Think step by step (chain-of-thought): identify the weakest point in Debater A's reasoning before constructing your counterargument.
+3. Present at least two distinct counterarguments or pieces of evidence that contradict Debater A's position.
+4. Clearly state which answer YOU believe is correct and why.
+5. Be concise but precise. Do not repeat arguments already made in previous rounds.
+6. End your response with the following line exactly:
+MY CURRENT ANSWER: [the single letter of the answer you are defending, e.g. A]
+
+Your response:

@@ -1,0 +1,16 @@
+You are an AI agent participating in a debate. Before the debate begins, you must independently form your initial position on the following multiple-choice question.
+
+QUESTION:
+{question}
+
+ANSWER CHOICES:
+{choices}
+
+INSTRUCTIONS:
+1. Think step by step to reason through the question.
+2. Select the answer you believe is most likely correct.
+3. Provide a brief (2-3 sentence) justification for your choice.
+4. End your response with the following line exactly:
+MY CURRENT ANSWER: [single letter only, e.g. C]
+
+Your response:

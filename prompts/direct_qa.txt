@@ -1,0 +1,16 @@
+You are an expert at answering multiple-choice questions. Answer the following question using careful step-by-step reasoning.
+
+QUESTION:
+{question}
+
+ANSWER CHOICES:
+{choices}
+
+INSTRUCTIONS:
+1. Think step by step before committing to an answer.
+2. Consider each answer choice and explain why it is correct or incorrect.
+3. Select the single best answer.
+4. End your response with the following line exactly:
+FINAL ANSWER: [single letter only, e.g. C]
+
+Your response:

@@ -14,10 +14,11 @@
 - [x] Preprocess and save as JSON
 
 ### Step 3 — Prompt Templates
-- [ ] `prompts/debater_a.txt`
-- [ ] `prompts/debater_b.txt`
-- [ ] `prompts/judge.txt`
-- [ ] `prompts/direct_qa.txt` (baseline)
+- [x] `prompts/debater_a.txt`
+- [x] `prompts/debater_b.txt`
+- [x] `prompts/judge.txt`
+- [x] `prompts/direct_qa.txt` (baseline)
+- [x] `prompts/initial_position.txt` (Phase 1 independent answer)
 
 ### Step 4 — Agent Modules
 - [ ] `src/utils.py` (config loader, API client, prompt loader)
@@ -54,3 +55,5 @@
 - Added: `.gitignore`, `.env.example`, `config.yaml`, `requirements.txt`, `README.md`, `AGENTS.md`, `DEVLOG.md`
 - Added `data/download_data.py` to fetch and preprocess ARC-Challenge from HuggingFace
 - Generated `data/arc_challenge_test.json` (1172 questions) and `data/arc_challenge_200.json` (200-question sample, seed=42)
+- Added prompt templates: `debater_a.txt`, `debater_b.txt`, `judge.txt`, `direct_qa.txt`, `initial_position.txt`
+- Prompts enforce structured CoT output and `MY CURRENT ANSWER: X` format for reliable parsing
