@@ -3,10 +3,22 @@
 # ─────────────────────────────────────────────
 
 models:
+  # Model name strings must match exactly what the vLLM server was launched with.
+  # Verify by running: curl http://<host>/v1/models with your API key.
   debater_a: "meta-llama/Llama-3.1-8B-Instruct"
   debater_b: "Qwen/Qwen3-8B"
   judge:     "meta-llama/Llama-3.1-70B-Instruct"
   baseline:  "meta-llama/Llama-3.1-70B-Instruct"  # used for Direct QA and Self-Consistency
+
+api:
+  # Base URLs and keys are loaded from .env — do not hardcode here.
+  # See .env.example for the expected variable names.
+  debater_a_url_env: "API_BASE_URL_DEBATER_A"
+  debater_a_key_env: "API_KEY_DEBATER_A"
+  debater_b_url_env: "API_BASE_URL_DEBATER_B"
+  debater_b_key_env: "API_KEY_DEBATER_B"
+  judge_url_env:     "API_BASE_URL_JUDGE"
+  judge_key_env:     "API_KEY_JUDGE"
 
 generation:
   temperature: 0.7
