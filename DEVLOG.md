@@ -30,8 +30,9 @@
 - [x] `src/debate_orchestrator.py` (4-phase pipeline + JSON logging)
 
 ### Step 6 — Baseline Runners
-- [ ] `experiments/run_baselines.py` (Direct QA + Self-Consistency)
-- [ ] `experiments/run_debate.py`
+- [x] `src/baseline_runner.py` (BaselineRunner class)
+- [x] `experiments/run_baselines.py` (Direct QA + Self-Consistency)
+- [x] `experiments/run_debate.py`
 
 ### Step 7 — Evaluation Scripts
 - [ ] `experiments/analyze_results.py`
@@ -63,3 +64,6 @@
 - Added `src/agents/judge.py`: Judge class (Llama-3.1-70B) with `evaluate` method returning structured verdict dict
 - Note: `strip_think()` in utils handles `<think>` blocks emitted by Qwen3
 - Added `src/debate_orchestrator.py`: full 4-phase pipeline with adaptive early stopping and per-question JSON logging
+- Added `src/baseline_runner.py`: BaselineRunner with Direct QA and Self-Consistency methods
+- Added `experiments/run_debate.py`: runs debate pipeline with --limit/--offset args, saves summary JSON
+- Added `experiments/run_baselines.py`: runs one or both baselines with --method/--limit args, saves summary JSON
