@@ -35,7 +35,30 @@
 - [x] `experiments/run_debate.py`
 
 ### Step 7 — Evaluation Scripts
-- [ ] `experiments/analyze_results.py`
+- [ ] `experiments/analyze_results.py` — plan:
+  - **Accuracy metrics**
+    - [ ] Accuracy per method (debate, direct_qa, self_consistency)
+    - [ ] Parse failure rate per method
+  - **Efficiency metrics** (per question, averaged)
+    - [ ] Avg LLM calls per question
+    - [ ] Avg total tokens per question
+    - [ ] Avg latency (seconds) per question
+  - **Debate-specific metrics**
+    - [ ] Avg rounds per debate
+    - [ ] Consensus rate (Phase 1 agreement %)
+    - [ ] Early stop rate (stopped before max_rounds %)
+    - [ ] Confidence vs. accuracy correlation (scatter plot)
+  - **Outputs**
+    - [ ] Comparison table printed as markdown to stdout
+    - [ ] `results/comparison_table.csv`
+    - [ ] `results/figures/accuracy_by_method.png`
+    - [ ] `results/figures/tokens_by_method.png`
+    - [ ] `results/figures/latency_by_method.png`
+    - [ ] `results/figures/confidence_vs_accuracy.png`
+  - **Statistical significance**
+    - [ ] McNemar's test: debate vs. direct_qa
+    - [ ] McNemar's test: debate vs. self_consistency
+    - [ ] Report p-values in comparison table
 
 ### Step 8 — Web UI
 - [ ] `ui/app.py` (Streamlit interface)
