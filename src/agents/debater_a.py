@@ -16,21 +16,21 @@ class DebaterA:
         self.config = config
         self.client, self.model = make_client("debater_a", config)
 
-    def get_initial_position(self, question: str, choices: dict) -> tuple[str, str | None]:
+    def get_initial_position(self, question: str, choices: dict) -> tuple[dict, str | None]:
         """
         Phase 1: independently generate an initial answer before debate starts.
 
         Returns:
-            (response_text, answer_letter)
+            (llm_result dict, answer_letter)
         """
         prompt = load_prompt(
             "initial_position",
             question=question,
             choices=format_choices(choices),
         )
-        response = call_llm(self.client, self.model, prompt, self.config)
-        answer = extract_current_answer(response)
-        return response, answer
+        result = call_llm(self.client, self.model, prompt, self.config)
+        answer = extract_current_answer(result["text"])
+        return result, answer
 
     def argue(
         self,
@@ -38,7 +38,7 @@ class DebaterA:
         choices: dict,
         position: str,
         rounds: list[dict],
-    ) -> tuple[str, str | None]:
+    ) -> tuple[dict, str | None]:
         """
         Phase 2: generate a debate argument defending {position}.
 
@@ -49,7 +49,7 @@ class DebaterA:
             rounds: list of prior debate round dicts (may be empty for Round 1)
 
         Returns:
-            (response_text, current_answer_letter)
+            (llm_result dict, current_answer_letter)
         """
         prompt = load_prompt(
             "debater_a",
@@ -58,6 +58,6 @@ class DebaterA:
             position=position,
             debate_history=format_debate_history(rounds),
         )
-        response = call_llm(self.client, self.model, prompt, self.config)
-        answer = extract_current_answer(response)
-        return response, answer
+        result = call_llm(self.client, self.model, prompt, self.config)
+        answer = extract_current_answer(result["text"])
+        return result, answer

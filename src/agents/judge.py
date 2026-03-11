@@ -30,16 +30,19 @@ class Judge:
         Args:
             question: the question text
             choices: dict of answer choices
-            initial_a: Debater A's Phase 1 response
-            initial_b: Debater B's Phase 1 response
+            initial_a: Debater A's Phase 1 response text
+            initial_b: Debater B's Phase 1 response text
             rounds: list of all debate round dicts
 
         Returns:
             dict with keys:
-                raw_response  - full judge response text
-                cot           - chain-of-thought analysis (raw text)
-                final_answer  - parsed answer letter (e.g. 'C') or None
-                confidence    - int 1-5 or None
+                raw_response        - full judge response text
+                final_answer        - parsed answer letter (e.g. 'C') or None
+                confidence          - int 1-5 or None
+                prompt_tokens       - input tokens
+                completion_tokens   - output tokens
+                total_tokens        - total tokens
+                latency_seconds     - API call duration
         """
         transcript = format_debate_transcript(initial_a, initial_b, rounds)
 
@@ -50,7 +53,7 @@ class Judge:
             debate_transcript=transcript,
         )
 
-        response = call_llm(
+        result = call_llm(
             self.client,
             self.model,
             prompt,
@@ -63,7 +66,11 @@ class Judge:
         )
 
         return {
-            "raw_response": response,
-            "final_answer": extract_final_answer(response),
-            "confidence":   extract_confidence(response),
+            "raw_response":      result["text"],
+            "final_answer":      extract_final_answer(result["text"]),
+            "confidence":        extract_confidence(result["text"]),
+            "prompt_tokens":     result["prompt_tokens"],
+            "completion_tokens": result["completion_tokens"],
+            "total_tokens":      result["total_tokens"],
+            "latency_seconds":   result["latency_seconds"],
         }

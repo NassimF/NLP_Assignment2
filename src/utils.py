@@ -12,6 +12,7 @@ Provides:
 
 import os
 import re
+import time
 import yaml
 from pathlib import Path
 from dotenv import load_dotenv
@@ -194,12 +195,18 @@ def call_llm(
     prompt: str,
     config: dict,
     system_prompt: str = "You are a helpful assistant participating in a structured debate."
-) -> str:
+) -> dict:
     """
-    Make a single chat completion call and return the response text.
-    Strips <think> blocks from the response.
+    Make a single chat completion call and return a result dict with:
+      - text             : response text (think blocks stripped)
+      - prompt_tokens    : input token count
+      - completion_tokens: output token count
+      - total_tokens     : total token count
+      - latency_seconds  : wall-clock time for the API call
     """
     gen = config["generation"]
+
+    t0 = time.perf_counter()
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -210,5 +217,16 @@ def call_llm(
         max_tokens=gen["max_tokens"],
         top_p=gen["top_p"],
     )
+    latency = time.perf_counter() - t0
+
     text = response.choices[0].message.content or ""
-    return strip_think(text.strip())
+    text = strip_think(text.strip())
+
+    usage = response.usage
+    return {
+        "text":              text,
+        "prompt_tokens":     usage.prompt_tokens     if usage else None,
+        "completion_tokens": usage.completion_tokens if usage else None,
+        "total_tokens":      usage.total_tokens      if usage else None,
+        "latency_seconds":   round(latency, 3),
+    }

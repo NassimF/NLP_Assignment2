@@ -9,7 +9,6 @@ Phases:
 """
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -17,6 +16,21 @@ from src.agents.debater_a import DebaterA
 from src.agents.debater_b import DebaterB
 from src.agents.judge import Judge
 from src.utils import load_config
+
+
+def _zero_usage() -> dict:
+    return {"total_llm_calls": 0, "total_tokens": 0,
+            "total_prompt_tokens": 0, "total_completion_tokens": 0,
+            "total_latency_seconds": 0.0}
+
+
+def _add_usage(acc: dict, result: dict):
+    """Accumulate token/latency stats from a single call_llm result dict."""
+    acc["total_llm_calls"]         += 1
+    acc["total_tokens"]            += result.get("total_tokens") or 0
+    acc["total_prompt_tokens"]     += result.get("prompt_tokens") or 0
+    acc["total_completion_tokens"] += result.get("completion_tokens") or 0
+    acc["total_latency_seconds"]   += result.get("latency_seconds") or 0.0
 
 
 class DebateOrchestrator:
@@ -46,9 +60,9 @@ class DebateOrchestrator:
         Returns:
             Full result dict (also saved as JSON to logs/)
         """
-        qid       = question_dict["id"]
-        question  = question_dict["question"]
-        choices   = question_dict["choices"]
+        qid          = question_dict["id"]
+        question     = question_dict["question"]
+        choices      = question_dict["choices"]
         ground_truth = question_dict["answer"]
 
         print(f"\n{'='*60}")
@@ -57,24 +71,32 @@ class DebateOrchestrator:
         print(f"Ground Truth: {ground_truth}")
         print(f"{'='*60}")
 
+        usage = _zero_usage()
+
         result = {
             "id":           qid,
             "question":     question,
             "choices":      choices,
             "ground_truth": ground_truth,
             "timestamp":    datetime.utcnow().isoformat(),
-            "total_llm_calls": 0,
         }
 
         # ── Phase 1: Initialization ───────────────────────────────────────────
         print("\n[Phase 1] Getting initial positions...")
 
-        resp_a, ans_a = self.debater_a.get_initial_position(question, choices)
-        resp_b, ans_b = self.debater_b.get_initial_position(question, choices)
-        result["total_llm_calls"] += 2
+        llm_a, ans_a = self.debater_a.get_initial_position(question, choices)
+        llm_b, ans_b = self.debater_b.get_initial_position(question, choices)
+        _add_usage(usage, llm_a)
+        _add_usage(usage, llm_b)
 
-        result["initial_position_a"] = {"response": resp_a, "answer": ans_a}
-        result["initial_position_b"] = {"response": resp_b, "answer": ans_b}
+        result["initial_position_a"] = {
+            "response": llm_a["text"], "answer": ans_a,
+            "tokens": llm_a["total_tokens"], "latency": llm_a["latency_seconds"],
+        }
+        result["initial_position_b"] = {
+            "response": llm_b["text"], "answer": ans_b,
+            "tokens": llm_b["total_tokens"], "latency": llm_b["latency_seconds"],
+        }
 
         print(f"  Debater A initial answer: {ans_a}")
         print(f"  Debater B initial answer: {ans_b}")
@@ -89,7 +111,7 @@ class DebateOrchestrator:
             result["consensus"] = False
             result["consensus_answer"] = None
             result["rounds"] = self._run_debate(
-                question, choices, ans_a, result
+                question, choices, ans_a, usage
             )
 
         # ── Phase 3: Judgment ─────────────────────────────────────────────────
@@ -102,9 +124,14 @@ class DebateOrchestrator:
             initial_b=result["initial_position_b"]["response"],
             rounds=result["rounds"],
         )
-        result["total_llm_calls"] += 1
-        result["judge"] = judge_result
+        _add_usage(usage, {
+            "total_tokens":      judge_result["total_tokens"],
+            "prompt_tokens":     judge_result["prompt_tokens"],
+            "completion_tokens": judge_result["completion_tokens"],
+            "latency_seconds":   judge_result["latency_seconds"],
+        })
 
+        result["judge"] = judge_result
         verdict = judge_result["final_answer"]
         result["verdict"] = verdict
 
@@ -114,7 +141,12 @@ class DebateOrchestrator:
         result["correct"] = (verdict == ground_truth) if verdict else False
         print(f"  Correct: {result['correct']} (ground truth: {ground_truth})")
 
-        # Save log
+        # Attach usage summary
+        result["usage"] = usage
+        print(f"  LLM calls: {usage['total_llm_calls']} | "
+              f"Tokens: {usage['total_tokens']} | "
+              f"Latency: {usage['total_latency_seconds']:.1f}s")
+
         self._save_log(result)
         return result
 
@@ -125,23 +157,16 @@ class DebateOrchestrator:
         question: str,
         choices: dict,
         position_a: str,
-        result: dict,
+        usage: dict,
     ) -> list[dict]:
         """
         Run the multi-round debate loop (Phase 2).
-
-        Args:
-            question: question text
-            choices: answer choices dict
-            position_a: Debater A's initial answer letter to defend
-            result: result dict (mutated to update total_llm_calls)
 
         Returns:
             List of round dicts
         """
         rounds = []
         consecutive_agreements = 0
-        # Fall back to first choice letter if initial answer parse failed
         position = position_a or list(choices.keys())[0]
 
         print(f"\n[Phase 2] Starting debate (Debater A defends: {position})")
@@ -150,48 +175,51 @@ class DebateOrchestrator:
             print(f"\n  -- Round {round_num} --")
 
             # Debater A argues
-            resp_a, ans_a = self.debater_a.argue(
+            llm_a, ans_a = self.debater_a.argue(
                 question=question,
                 choices=choices,
                 position=position,
                 rounds=rounds,
             )
-            result["total_llm_calls"] += 1
+            _add_usage(usage, llm_a)
             print(f"    Debater A current answer: {ans_a}")
 
             # Build partial round so Debater B can see A's argument
             partial_rounds = rounds + [{
-                "round": round_num,
-                "debater_a": resp_a,
+                "round":     round_num,
+                "debater_a": llm_a["text"],
                 "debater_b": "(pending)",
             }]
 
             # Debater B responds
-            resp_b, ans_b = self.debater_b.argue(
+            llm_b, ans_b = self.debater_b.argue(
                 question=question,
                 choices=choices,
                 rounds=partial_rounds,
             )
-            result["total_llm_calls"] += 1
+            _add_usage(usage, llm_b)
             print(f"    Debater B current answer: {ans_b}")
 
-            # Record completed round
             round_record = {
-                "round":      round_num,
-                "debater_a":  resp_a,
-                "answer_a":   ans_a,
-                "debater_b":  resp_b,
-                "answer_b":   ans_b,
+                "round":           round_num,
+                "debater_a":       llm_a["text"],
+                "answer_a":        ans_a,
+                "tokens_a":        llm_a["total_tokens"],
+                "latency_a":       llm_a["latency_seconds"],
+                "debater_b":       llm_b["text"],
+                "answer_b":        ans_b,
+                "tokens_b":        llm_b["total_tokens"],
+                "latency_b":       llm_b["latency_seconds"],
             }
             rounds.append(round_record)
 
-            # Early stopping check (only after min_rounds)
+            # Early stopping check
             if ans_a and ans_b and ans_a == ans_b:
                 consecutive_agreements += 1
                 print(f"    Agreement ({consecutive_agreements}/{self.early_stop_consecutive}): both say {ans_a}")
                 if (round_num >= self.min_rounds and
                         consecutive_agreements >= self.early_stop_consecutive):
-                    print(f"    Early stopping: {self.early_stop_consecutive} consecutive agreements.")
+                    print(f"    Early stopping after round {round_num}.")
                     break
             else:
                 consecutive_agreements = 0
