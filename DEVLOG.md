@@ -7,11 +7,11 @@
 - [x] Create directory structure
 - [x] `.gitignore`, `.env.example`, `config.yaml`, `requirements.txt`
 - [x] `README.md`, `AGENTS.md`, `DEVLOG.md`
-- [ ] Initial git commit
+- [x] Initial git commit
 
 ### Step 2 — Data Pipeline
-- [ ] Download ARC-Challenge dataset
-- [ ] Preprocess and save as JSON
+- [x] Download ARC-Challenge dataset
+- [x] Preprocess and save as JSON
 
 ### Step 3 — Prompt Templates
 - [ ] `prompts/debater_a.txt`
@@ -52,3 +52,5 @@
 - Initialized git repository, renamed branch to `main`
 - Created full project directory structure
 - Added: `.gitignore`, `.env.example`, `config.yaml`, `requirements.txt`, `README.md`, `AGENTS.md`, `DEVLOG.md`
+- Added `data/download_data.py` to fetch and preprocess ARC-Challenge from HuggingFace
+- Generated `data/arc_challenge_test.json` (1172 questions) and `data/arc_challenge_200.json` (200-question sample, seed=42)
