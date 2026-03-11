@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────
+# LLM Debate Pipeline — Configuration
+# ─────────────────────────────────────────────
+
+models:
+  debater_a: "meta-llama/Llama-3.1-8B-Instruct"
+  debater_b: "Qwen/Qwen3-8B"
+  judge:     "meta-llama/Llama-3.1-70B-Instruct"
+  baseline:  "meta-llama/Llama-3.1-70B-Instruct"  # used for Direct QA and Self-Consistency
+
+generation:
+  temperature: 0.7
+  max_tokens: 1024
+  top_p: 0.95
+
+debate:
+  max_rounds: 5           # maximum number of debate rounds (N >= 3)
+  min_rounds: 3           # minimum rounds before early stopping is allowed
+  early_stop_consecutive: 2  # stop if both agents agree for this many consecutive rounds
+
+dataset:
+  name: "ARC-Challenge"
+  split: "test"
+  num_questions: 200      # number of questions to evaluate
+  data_dir: "data/"
+
+self_consistency:
+  num_samples: 10         # number of samples for majority vote baseline
+
+logging:
+  log_dir: "logs/"
+  results_dir: "results/"
