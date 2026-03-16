@@ -23,6 +23,8 @@ class Judge:
         initial_a: str,
         initial_b: str,
         rounds: list[dict],
+        answer_a: str | None = None,
+        answer_b: str | None = None,
     ) -> dict:
         """
         Phase 3: evaluate the full debate and render a verdict.
@@ -51,6 +53,8 @@ class Judge:
             question=question,
             choices=format_choices(choices),
             debate_transcript=transcript,
+            answer_a=answer_a or "?",
+            answer_b=answer_b or "?",
         )
 
         result = call_llm(

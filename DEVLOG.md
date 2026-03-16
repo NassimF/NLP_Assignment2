@@ -57,6 +57,21 @@
 
 ## Changelog
 
+### 2026-03-16 (continued)
+- **Fixed judge independence issue** (two changes):
+  1. **Consensus short-circuit**: when both debaters agree in Phase 1, the judge is now skipped entirely and the consensus answer is used directly as the verdict. Previously the judge was called with an empty debate transcript and would do independent QA, sometimes overriding a correct unanimous consensus (e.g. both debaters chose A, judge chose C). This saves ~1 LLM call and ~1200 tokens per consensus question.
+  2. **Judge constrained to debaters' positions**: in non-consensus cases, the judge prompt now explicitly states both debaters' final answers and instructs the judge to select only between those two options — not any third answer. This aligns with the assignment requirement that the judge explains "which debater was more persuasive."
+  - Files changed: `prompts/judge.txt`, `src/agents/judge.py`, `src/debate_orchestrator.py`
+  - Smoke test: 0 parse failures, consensus short-circuit confirmed working
+
+- **Known remaining behavior**: in non-consensus cases, the judge can still side with the wrong debater (e.g. AKDE&ED_2008_8_48 — Debater B correctly chose A but judge sided with Debater A's wrong answer C). This is expected — the judge evaluates argument quality, not factual correctness. A persuasive but wrong argument can win. Good material for qualitative analysis in the report.
+
+- **Known minor issue**: Debater B occasionally outputs `None` as its answer in Round 1 (parse failure on `MY CURRENT ANSWER:`). Subsequent rounds parse correctly and the debate continues normally. Does not affect final results.
+
+  > **NOTE FOR REPORT.md**:
+  > - In the **Analysis** section: discuss the AKDE&ED case as a failure example — the judge sided with the more rhetorically persuasive debater (A) over the factually correct one (B). This illustrates a known limitation of LLM-as-judge: persuasiveness ≠ correctness.
+  > - In the **Prompt Engineering** section: document the judge independence fix — initial design allowed the judge to pick any answer independently; revised design constrains it to the debaters' positions per the assignment spec. Also mention the consensus short-circuit design decision.
+
 ### 2026-03-16
 - Added `experiments/test_connections.py`: verifies API connectivity for all 3 model servers (Debater A, B, Judge) with a minimal call, reports status/latency/sample response
 - All 3 servers confirmed OK; Qwen3 and 70B emit `<think>` blocks (handled by strip_think())
