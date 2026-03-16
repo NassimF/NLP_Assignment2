@@ -65,6 +65,19 @@
 
 ---
 
+---
+
+## ⏭️ Next Steps (after debate run finishes)
+
+1. **Check debate output** — verify `results/debate_summary.json` has 200 questions and looks sane (accuracy, parse failures, avg rounds)
+2. **Run analyze_results.py** — `python experiments/analyze_results.py` → generates `results/comparison_table.csv` and 4 figures in `results/figures/`
+3. **Update REPORT.md Section 2** — fill in TBD placeholders in the results table with real numbers; embed the 4 figures
+4. **Write REPORT.md Section 3 (Analysis)** — pick 3–5 interesting transcripts from `logs/` (e.g. consensus case, early stop, judge wrong, judge right despite bad debater); add qualitative discussion
+5. **Commit + push** — commit updated REPORT.md, DEVLOG, and any generated figures/CSVs
+6. **Optional: Step 10 Bonus** — multi-judge panel (+15%): run 3 independent judge calls per question, majority vote as final verdict; add to analyze_results.py and REPORT.md
+
+---
+
 ## Changelog
 
 ### 2026-03-16 (continued)
