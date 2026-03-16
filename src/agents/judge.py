@@ -25,6 +25,7 @@ class Judge:
         rounds: list[dict],
         answer_a: str | None = None,
         answer_b: str | None = None,
+        consensus: bool = False,
     ) -> dict:
         """
         Phase 3: evaluate the full debate and render a verdict.
@@ -48,6 +49,16 @@ class Judge:
         """
         transcript = format_debate_transcript(initial_a, initial_b, rounds)
 
+        if consensus:
+            consensus_note = (
+                f"NOTE: Both debaters independently reached consensus on answer "
+                f"{answer_a} before any debate rounds. There are no debate rounds to "
+                f"evaluate — assess only the quality of their initial reasoning and "
+                f"confirm or override this consensus with your verdict."
+            )
+        else:
+            consensus_note = ""
+
         prompt = load_prompt(
             "judge",
             question=question,
@@ -55,6 +66,7 @@ class Judge:
             debate_transcript=transcript,
             answer_a=answer_a or "?",
             answer_b=answer_b or "?",
+            consensus_note=consensus_note,
         )
 
         result = call_llm(

@@ -64,6 +64,9 @@
   - Files changed: `prompts/judge.txt`, `src/agents/judge.py`, `src/debate_orchestrator.py`
   - Smoke test: 0 parse failures, consensus short-circuit confirmed working
 
+- **Fixed consensus short-circuit** (violated assignment spec): initial implementation skipped the judge entirely when Phase 1 consensus was reached. Assignment says "skip to Phase 3" (not skip Phase 3) — judge is always required. Reverted short-circuit; judge now always runs. For consensus cases, judge prompt includes a note explaining no debate rounds occurred and instructs the judge to evaluate initial reasoning only. Judge is still constrained to the consensus answer (answer_a = answer_b = same letter). Smoke test confirmed: judge correctly confirms consensus with confidence score, 0 parse failures.
+  > **NOTE FOR REPORT.md**: Mention in Prompt Engineering section — this was an iterative design correction caught by re-reading the assignment spec carefully. Shows attention to requirements alignment.
+
 - **Known remaining behavior**: in non-consensus cases, the judge can still side with the wrong debater (e.g. AKDE&ED_2008_8_48 — Debater B correctly chose A but judge sided with Debater A's wrong answer C). This is expected — the judge evaluates argument quality, not factual correctness. A persuasive but wrong argument can win. Good material for qualitative analysis in the report.
 
 - **Known minor issue**: Debater B occasionally outputs `None` as its answer in Round 1 (parse failure on `MY CURRENT ANSWER:`). Subsequent rounds parse correctly and the debate continues normally. Does not affect final results.

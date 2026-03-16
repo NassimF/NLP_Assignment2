@@ -1,14 +1,16 @@
 """
 app.py — Streamlit UI for the LLM Debate Pipeline.
 
-Two modes:
-  1. Run Debate  — pick a question from the dataset and run a live debate
-  2. Browse Logs — explore past debate logs saved in logs/
+Three modes:
+  1. Run Debate     — pick a question from the dataset and run a live debate
+  2. Browse Logs    — explore past debate logs saved in logs/
+  3. Results        — comparison table and figures from analyze_results.py
 """
 
 import sys
 import json
 import glob
+import csv
 from pathlib import Path
 
 import streamlit as st
@@ -134,7 +136,7 @@ st.sidebar.title("⚖️ LLM Debate Pipeline")
 st.sidebar.markdown("**CS6263 — Assignment 2**")
 st.sidebar.divider()
 
-mode = st.sidebar.radio("Mode", ["🔴 Run Debate", "📂 Browse Logs"])
+mode = st.sidebar.radio("Mode", ["🔴 Run Debate", "📂 Browse Logs", "📊 Results"])
 
 # ─── Mode 1: Run Debate ───────────────────────────────────────────────────────
 
@@ -244,3 +246,56 @@ elif mode == "📂 Browse Logs":
 
     st.divider()
     render_debate_log(selected_log)
+
+# ─── Mode 3: Results ──────────────────────────────────────────────────────────
+
+elif mode == "📊 Results":
+    st.title("Experiment Results")
+    st.markdown("Comparison of debate pipeline vs. baselines on ARC-Challenge (200 questions).")
+
+    config      = load_config()
+    results_dir = ROOT / config["logging"]["results_dir"]
+    csv_path    = results_dir / "comparison_table.csv"
+    fig_dir     = results_dir / "figures"
+
+    # ── Comparison table ──────────────────────────────────────────────────────
+    st.markdown("### Comparison Table")
+    if csv_path.exists():
+        rows = []
+        with open(csv_path) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                rows.append(row)
+        st.dataframe(rows, use_container_width=True)
+    else:
+        st.warning(f"No comparison table found at `{csv_path}`. Run `experiments/analyze_results.py` first.")
+
+    st.divider()
+
+    # ── Figures ───────────────────────────────────────────────────────────────
+    st.markdown("### Figures")
+
+    figures = {
+        "Accuracy by Method":  fig_dir / "accuracy_by_method.png",
+        "Token Usage by Method": fig_dir / "tokens_by_method.png",
+        "Latency by Method":   fig_dir / "latency_by_method.png",
+        "Confidence vs. Accuracy (Debate)": fig_dir / "confidence_vs_accuracy.png",
+    }
+
+    available = {k: v for k, v in figures.items() if v.exists()}
+
+    if not available:
+        st.warning(f"No figures found in `{fig_dir}`. Run `experiments/analyze_results.py` first.")
+    else:
+        cols = st.columns(2)
+        for i, (title, path) in enumerate(available.items()):
+            with cols[i % 2]:
+                st.markdown(f"**{title}**")
+                st.image(str(path))
+
+    # ── McNemar p-values note ─────────────────────────────────────────────────
+    if csv_path.exists() and rows:
+        st.divider()
+        st.markdown("### Statistical Significance")
+        st.markdown("McNemar's test p-values (debate vs. each baseline) are included in the comparison table above under the `p_vs_debate` column.")
+        st.caption("p < 0.05 indicates a statistically significant difference in accuracy between the debate system and that baseline.")

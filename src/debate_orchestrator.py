@@ -107,57 +107,44 @@ class DebateOrchestrator:
             result["consensus"]        = True
             result["consensus_answer"] = ans_a
             result["rounds"]           = []
-
-            # Short-circuit: no judge needed — use consensus answer directly
-            print("\n[Phase 3] Consensus reached — skipping judge, using consensus answer.")
-            result["judge"]   = {
-                "raw_response":      "Consensus reached in Phase 1 — judge not called.",
-                "final_answer":      ans_a,
-                "confidence":        None,
-                "prompt_tokens":     0,
-                "completion_tokens": 0,
-                "total_tokens":      0,
-                "latency_seconds":   0.0,
-            }
-            result["verdict"] = ans_a
-
+            final_ans_a = ans_a
+            final_ans_b = ans_b
         else:
             result["consensus"]        = False
             result["consensus_answer"] = None
             result["rounds"]           = self._run_debate(
                 question, choices, ans_a, usage
             )
-
-            # Determine each debater's final answer for the judge
             final_ans_a = ans_a  # Debater A is always locked to initial position
             final_ans_b = next(
                 (r["answer_b"] for r in reversed(result["rounds"]) if r.get("answer_b")),
                 ans_b,
             )
 
-            # ── Phase 3: Judgment ──────────────────────────────────────────────
-            print("\n[Phase 3] Judge evaluating debate...")
+        # ── Phase 3: Judgment (always runs per assignment spec) ───────────────
+        print("\n[Phase 3] Judge evaluating debate...")
 
-            judge_result = self.judge.evaluate(
-                question=question,
-                choices=choices,
-                initial_a=result["initial_position_a"]["response"],
-                initial_b=result["initial_position_b"]["response"],
-                rounds=result["rounds"],
-                answer_a=final_ans_a,
-                answer_b=final_ans_b,
-            )
-            _add_usage(usage, {
-                "total_tokens":      judge_result["total_tokens"],
-                "prompt_tokens":     judge_result["prompt_tokens"],
-                "completion_tokens": judge_result["completion_tokens"],
-                "latency_seconds":   judge_result["latency_seconds"],
-            })
+        judge_result = self.judge.evaluate(
+            question=question,
+            choices=choices,
+            initial_a=result["initial_position_a"]["response"],
+            initial_b=result["initial_position_b"]["response"],
+            rounds=result["rounds"],
+            answer_a=final_ans_a,
+            answer_b=final_ans_b,
+            consensus=result["consensus"],
+        )
+        _add_usage(usage, {
+            "total_tokens":      judge_result["total_tokens"],
+            "prompt_tokens":     judge_result["prompt_tokens"],
+            "completion_tokens": judge_result["completion_tokens"],
+            "latency_seconds":   judge_result["latency_seconds"],
+        })
 
-            result["judge"]   = judge_result
-            result["verdict"] = judge_result["final_answer"]
+        result["judge"]   = judge_result
+        result["verdict"] = judge_result["final_answer"]
 
-            print(f"  Judge verdict: {result['verdict']} (confidence: {judge_result['confidence']})")
+        print(f"  Judge verdict: {result['verdict']} (confidence: {judge_result['confidence']})")
 
         # ── Phase 4: Evaluation ───────────────────────────────────────────────
         verdict = result["verdict"]

@@ -13,13 +13,14 @@ DEBATER POSITIONS:
 - Debater A is defending answer: {answer_a}
 - Debater B is defending answer: {answer_b}
 
+{consensus_note}
 INSTRUCTIONS:
 Provide your evaluation in the following structured format. Do not skip any section.
 IMPORTANT: Write all required tags (FINAL ANSWER, CONFIDENCE) as plain text exactly as shown — no markdown, no bold, no brackets around the letter.
-IMPORTANT: Your FINAL ANSWER must be either {answer_a} or {answer_b}. Select the answer argued by the more persuasive debater. Do not select any other answer.
+IMPORTANT: Your FINAL ANSWER must be either {answer_a} or {answer_b}. Do not select any other answer.
 
 ### 1. Chain-of-Thought Analysis
-Think step by step. Summarize the overall flow of the debate. What was the core disagreement? How did each debater's argument evolve across rounds?
+Think step by step. Evaluate the quality of each debater's reasoning in their initial positions and any subsequent rounds. What were the key arguments made? How sound was the logic?
 
 ### 2. Debater A — Argument Assessment
 - Strongest argument: [identify the single most compelling point made by Debater A]
@@ -30,7 +31,7 @@ Think step by step. Summarize the overall flow of the debate. What was the core 
 - Weakest argument: [identify the least convincing or most flawed point made by Debater B]
 
 ### 4. Verdict
-Based on the quality of reasoning and evidence presented, the more persuasive case was made by: [Debater A / Debater B]
+Based on the quality of reasoning presented, select the answer defended by the more persuasive debater: [Debater A / Debater B]
 
 The correct answer is: [single letter only, e.g. C]
 
