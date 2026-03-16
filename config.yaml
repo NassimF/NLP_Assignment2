@@ -46,3 +46,7 @@ self_consistency:
 logging:
   log_dir: "logs/"
   results_dir: "results/"
+
+panel:
+  num_judges: 3
+  deliberate: true   # if true, run round 2 when R1 judges disagree

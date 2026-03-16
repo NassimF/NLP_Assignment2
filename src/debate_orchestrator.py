@@ -34,11 +34,11 @@ def _add_usage(acc: dict, result: dict):
 
 
 class DebateOrchestrator:
-    def __init__(self, config: dict = None):
+    def __init__(self, config: dict = None, judge=None):
         self.config = config or load_config()
         self.debater_a = DebaterA(self.config)
         self.debater_b = DebaterB(self.config)
-        self.judge = Judge(self.config)
+        self.judge = judge if judge is not None else Judge(self.config)
 
         self.log_dir = Path(self.config["logging"]["log_dir"])
         self.log_dir.mkdir(exist_ok=True)
