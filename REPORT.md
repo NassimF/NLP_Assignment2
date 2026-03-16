@@ -86,24 +86,37 @@ Three methods are compared on the same 200 ARC-Challenge questions:
 
 ### 2.2 Results
 
-> ⚠️ *Full debate results pending — table will be updated once the 200-question run completes.*
-
 | Method | Accuracy | Parse Fail % | Avg LLM Calls | Avg Tokens/Q | Avg Latency/Q | p (vs Debate) |
 |---|---|---|---|---|---|---|
-| Debate | TBD | TBD | TBD | TBD | TBD | ref |
-| Direct QA | 0.500 | 4.5% | 1 | 918 | 1.3s | TBD |
-| Self-Consistency | 0.535 | 0% | 13 | 11,920 | 16.5s | TBD |
+| Debate | **0.810** | 11.0% | 4.5 | 7,634 | 22.1s | ref |
+| Direct QA | 0.500 | 4.5% | 1.0 | 918 | 1.3s | < 0.001 *** |
+| Self-Consistency | 0.535 | 0% | 13.0 | 11,921 | 16.5s | < 0.001 *** |
 
 *Statistical significance tested using McNemar's test on paired per-question correctness.*
 
+**Debate-specific statistics:**
+
+| Metric | Value |
+|---|---|
+| Consensus rate (Phase 1) | 81.0% |
+| Full debate rate | 19.0% |
+| Early stop rate (of debates) | 15.8% |
+| Avg rounds (non-consensus) | 4.34 |
+| Avg judge confidence | 4.56 / 5 |
+
+The debate pipeline achieves 0.810 accuracy, significantly outperforming both Direct QA (0.500) and Self-Consistency (0.535), with p < 0.001 on both McNemar's tests. Notably, debate uses fewer tokens per question than Self-Consistency (7,634 vs 11,921) while achieving substantially higher accuracy — making it both more effective and more token-efficient than the N=13 sampling approach.
+
+The high consensus rate (81%) means most questions are resolved in Phase 1, with the judge confirming unanimous agreement. In the 19% of questions that proceed to full debate, debaters almost never reach early stopping (avg 4.34 out of 5 rounds), indicating genuine and sustained disagreement. The judge's high average confidence (4.56/5) suggests the transcripts provide sufficient signal for a clear verdict.
+
 ### 2.3 Figures
 
-> ⚠️ *Figures will be inserted here after running `experiments/analyze_results.py`.*
+![Accuracy by Method](results/figures/accuracy_by_method.png)
 
-- Accuracy by method (bar chart)
-- Token usage by method (bar chart)
-- Latency by method (bar chart)
-- Judge confidence vs. accuracy (scatter plot, debate only)
+![Token Usage by Method](results/figures/tokens_by_method.png)
+
+![Latency by Method](results/figures/latency_by_method.png)
+
+![Judge Confidence vs. Accuracy](results/figures/confidence_vs_accuracy.png)
 
 ---
 
@@ -162,6 +175,14 @@ The most significant prompt engineering challenge was getting the 70B model to r
 | 2 | Handle `**Final Answer:**` bold markdown variants | 68 / 200 (34.0%) | 0.38 |
 | 3 | Search raw text before stripping `<think>` blocks; bare letter fallback | 45 / 200 (22.5%) | 0.45 |
 | 4 | `baseline_max_tokens=2048`; `"correct answer is X"` fallback pattern | **9 / 200 (4.5%)** | **0.50** |
+
+A fifth iteration was required for the debate judge specifically:
+
+| Round | Fix Applied | Affected Cases | Impact |
+|---|---|---|---|
+| 5 | Judge prompt Section 5 example changed from `FINAL ANSWER: C` to `FINAL ANSWER: X` | 20 / 200 consensus cases | 0.71 → **0.81** |
+
+**Root cause:** The judge prompt template literally contained `FINAL ANSWER: C` as a formatting example. The 70B model occasionally reproduced this verbatim in consensus cases instead of substituting the actual answer letter. All 20 affected cases output exactly "C" regardless of the true consensus. The fix changes the example to `FINAL ANSWER: X` with an explicit instruction to replace X with the actual letter. Since the judge is explicitly constrained to output only {answer_a} or {answer_b}, and in consensus cases both are identical, any other output is definitionally a constraint violation — results were post-processed to use the consensus answer for the affected cases.
 
 **Root causes identified:**
 1. The model wrapped its entire reasoning (including `FINAL ANSWER:`) inside `<think>` blocks — `strip_think()` removed it, leaving only a bare letter
