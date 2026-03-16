@@ -117,7 +117,10 @@ def format_debate_history(rounds: list[dict]) -> str:
     for r in rounds:
         lines.append(f"--- Round {r['round']} ---")
         lines.append(f"[Debater A]:\n{r['debater_a']}")
-        lines.append(f"[Debater B]:\n{r['debater_b']}")
+        if r.get("debater_b") and r["debater_b"] != "(pending)":
+            lines.append(f"[Debater B]:\n{r['debater_b']}")
+        else:
+            lines.append("[Debater B]: (has not responded yet this round)")
         lines.append("")
     return "\n".join(lines)
 
