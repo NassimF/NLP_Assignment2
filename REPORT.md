@@ -124,17 +124,41 @@ The high consensus rate (81%) means most questions are resolved in Phase 1, with
 
 ### 3.1 Qualitative Transcript Analysis
 
-> ⚠️ *This section will be completed after the full debate run, with 3–5 selected transcripts from `logs/`.*
-
-#### Known Failure Case: Persuasive but Wrong (AKDE&ED_2008_8_48)
+#### Case 1: Persuasive but Wrong (AKDE&ED_2008_8_48)
 
 In this question (ground truth: A), Debater A incorrectly defended answer C across all 5 rounds, while Debater B correctly defended A. Despite Debater B making the factually correct argument, the judge sided with Debater A's position (C) and gave a confidence score of 4/5.
 
 This illustrates a known limitation of LLM-as-judge systems: **persuasiveness ≠ correctness**. The judge evaluates argument quality and rhetorical coherence, not factual accuracy. A well-structured but incorrect argument can outperform a correct but poorly-argued position. This aligns with theoretical concerns raised by Irving et al. (2018) — debate is only reliable when the judge can independently verify claims, which is not guaranteed for a judge operating purely on language.
 
+#### Case 2: Factually Superior Argument Wins (Mercury_7068635)
+
+In this question ("Which nonrenewable resource is used extensively in computers and electronics?", ground truth: C, gold), Debater A defended D (lead) while Debater B defended C (gold) across all 5 rounds. Debater B's key advantage was specificity: it cited the RoHS directive's mandatory phase-out of lead soldering, the dominance of lithium-ion over lead-acid batteries in consumer devices, and the claim that gold is indispensable in microprocessors and connectors. Debater A's responses grew increasingly speculative over the rounds, eventually claiming lead is used in "advanced ceramics and glass materials" for display panels — a claim the judge explicitly flagged as lacking empirical support. The judge sided with Debater B (C), confidence 5/5. Correct.
+
+This is the positive case for debate: when one debater has clearly more factually grounded arguments and the other's claims are falsifiable, the judge correctly identifies the stronger position. Structured adversarial pressure forces debaters to escalate specificity, which exposes weaknesses in vague or overstated claims over successive rounds.
+
+#### Case 3: Both Debaters Wrong — Hard Ceiling (Mercury_SC_402276)
+
+In this question ("Which of the following best describes a learned behavior?", ground truth: D, "fish swimming to the top of an aquarium to get food"), both Debater A and Debater B independently chose C ("cats pawing the area where they are going to sleep") in Phase 1 and reached consensus without triggering a debate. Both reasoned that cat pawing is a learned territorial behavior, while dismissing option D as innate fish behavior. This is backwards: fish swimming to a feeding location is the textbook operant conditioning example, while cat pawing has strong instinctual components. The judge, presented with unanimous initial positions, confirmed C with confidence 5/5. Incorrect.
+
+This case illustrates Irving et al.'s fundamental constraint directly: **if neither debater holds the correct answer, no amount of judicial reasoning can recover it.** Debate cannot manufacture knowledge that neither agent possesses. The 81% consensus rate means most questions skip debate entirely — when that consensus is wrong, the system has no self-correction mechanism.
+
+#### Case 4: Debater B Parse Failure — Resilient but Wasteful (Mercury_7214498)
+
+In this question ("Which object in the solar system is orbited by a belt of asteroids?", ground truth: C, the Sun), Debater A correctly argued for C across all 5 rounds. Debater B, however, produced `null` answers in every single round — its 1024-token budget was consumed entirely by internal chain-of-thought reasoning inside `<think>` blocks that never resolved into a parseable final answer, truncating before the required `MY CURRENT ANSWER:` tag. The debate was one-sided throughout.
+
+Despite the complete failure of Debater B, the judge correctly reached verdict C, confidence 5/5. The cost was extreme: 42,266 total tokens and 116.7 seconds — roughly 5.5× the average tokens per question (7,634) and 5.3× the average latency (22.1s). This exposes a concrete failure mode: when Debater B enters a reasoning loop without producing output, the system runs all remaining rounds rather than detecting the failure and terminating early. A simple fix — detecting consecutive `null` answers after round 1 and halting the debate — would eliminate this class of compute waste without affecting accuracy.
+
 ### 3.2 Connection to Theoretical Predictions
 
-Irving et al. (2018) predict that debate improves outcomes when: (a) one debater has the correct answer, and (b) the judge can distinguish strong from weak arguments. Our results will test this empirically — cases where both debaters are wrong (neither chose the correct answer) represent a fundamental ceiling for the debate system.
+Irving et al. (2018) predict that debate improves outcomes when two conditions hold: (a) at least one debater has access to the correct answer, and (b) the judge can distinguish arguments grounded in true claims from arguments grounded in false ones.
+
+Our results confirm both conditions — and their limits. Condition (a) is met in the majority of cases: the 81% consensus rate means debaters agree on the same answer most of the time, and that consensus is generally correct. The judge confirming unanimous structured chain-of-thought reasoning from two 8B models is substantially more accurate than the 70B model reasoning from scratch alone (0.81 vs. 0.50 Direct QA). Condition (a) fails cleanly in cases like Mercury_SC_402276, where both debaters independently chose the wrong answer: the system produced a unanimous verdict at maximum confidence, yet was incorrect. These cases are a hard ceiling no judge quality or debate length can overcome.
+
+Condition (b) holds when argument quality clearly differs. In Mercury_7068635, Debater B's evidence was demonstrably stronger — concrete regulatory citations and usage statistics versus Debater A's escalating speculation — and the judge identified this gradient correctly. Condition (b) fails in cases like AKDE&ED_2008_8_48, where Debater A's incorrect argument was rhetorically coherent: the judge evaluated persuasiveness rather than factual accuracy, and the better-argued wrong answer won.
+
+The 38 non-consensus debates (19%) are where both conditions interact most critically. Our system achieved only 47% accuracy on these cases (18 correct, 20 incorrect) — barely above chance — while debaters ran nearly the full 5 rounds on average (4.34 rounds) and the judge reported high confidence throughout (4.56/5 average). This suggests the judge is not well-calibrated to its own uncertainty when presented with two persistent, well-structured opposing arguments. The 22 parse failure cases (11%) represent an engineering ceiling rather than an architectural one: these failures are concentrated in Debater B and are directly addressable through early-termination detection and more robust output parsing.
+
+Token efficiency provides one further data point: debate uses 7,634 tokens/question versus 11,921 for self-consistency, while achieving substantially higher accuracy (0.81 vs. 0.54). The self-consistency approach generates 13 independent samples but lacks the directed adversarial pressure that debate applies — resulting in higher token expenditure with less structured reasoning signal, and a majority vote that cannot exploit disagreements between samples the way a judge can exploit a debate transcript.
 
 ---
 
