@@ -37,7 +37,9 @@ dataset:
   data_dir: "data/"
 
 self_consistency:
-  num_samples: 10         # number of samples for majority vote baseline
+  # N must match total LLM calls in a full debate for a fair comparison:
+  # 2 (initial positions) + 2 x max_rounds (debate) + 1 (judge) = 13
+  num_samples: 13         # number of samples for majority vote baseline
 
 logging:
   log_dir: "logs/"
