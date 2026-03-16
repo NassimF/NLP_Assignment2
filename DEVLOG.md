@@ -62,6 +62,7 @@
 - All 3 servers confirmed OK; Qwen3 and 70B emit `<think>` blocks (handled by strip_think())
 - Fixed `config.yaml`: set `self_consistency.num_samples=13` to match total LLM calls in a full debate (2 initial + 2×5 rounds + 1 judge)
 - Updated `AGENTS.md`: added research question, 4-phase protocol description, and baseline definitions
+- Documented Debater A locked-position design decision in `AGENTS.md`
 
 ### 2026-03-15
 - Added `experiments/analyze_results.py`: loads debate_summary.json + baseline JSONs, prints markdown comparison table, saves CSV, generates 4 figures (accuracy/tokens/latency bar charts + confidence vs. accuracy scatter), runs McNemar's test for statistical significance

@@ -40,6 +40,21 @@ All models accessed via OpenAI-compatible API (`openai` Python SDK with custom `
 - `logs/` — auto-generated, gitignored
 - `results/` — auto-generated, gitignored
 
+## Design Decisions
+
+### Debater A — Locked Position (Strict Proponent Role)
+Debater A's prompt ends with `MY CURRENT ANSWER: {position}`, where `{position}` is the answer letter from Phase 1, hardcoded at render time. This means Debater A **can never change their reported answer** during the debate — they are permanently committed to defending their initial position.
+
+**Why this design was chosen:**
+
+1. **Asymmetric roles by design.** The assignment defines Debater A as the Proponent who "argues in favor of a candidate answer" and Debater B as the Opponent who "argues against Debater A's answer." If Debater A could freely change their answer, the debate loses its adversarial structure — both agents would independently converge to what they think is correct, which is no different from running two Direct QA calls.
+
+2. **Early stopping is meaningful only under this design.** The adaptive stopping criterion (both agree for 2 consecutive rounds) is well-defined when Debater B has to *work to flip* from their own position to Debater A's. If Debater A could also flip, you'd get chaotic convergence where both agents chase each other's answers, making the stopping criterion unreliable.
+
+3. **Mirrors formal debate format.** In real academic debates, each side is assigned a position to defend regardless of personal belief. Debater A is committed to their opening argument for the duration of the debate.
+
+**Trade-off:** If Debater A chose the wrong answer in Phase 1, they are locked into defending an incorrect position for all rounds. The judge is then expected to recognize the weakness of Debater A's arguments through CoT evaluation and rule against them — which is exactly what the judge's structured assessment (strongest/weakest arguments per debater) is designed to handle.
+
 ## Do Not
 - Do not commit `.env`
 - Do not hardcode any model name, API URL, or key in source files
