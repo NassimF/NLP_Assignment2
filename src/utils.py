@@ -197,7 +197,8 @@ def call_llm(
     model: str,
     prompt: str,
     config: dict,
-    system_prompt: str = "You are a helpful assistant participating in a structured debate."
+    system_prompt: str = "You are a helpful assistant participating in a structured debate.",
+    max_tokens: int | None = None,
 ) -> dict:
     """
     Make a single chat completion call and return a result dict with:
@@ -208,6 +209,7 @@ def call_llm(
       - latency_seconds  : wall-clock time for the API call
     """
     gen = config["generation"]
+    effective_max_tokens = max_tokens if max_tokens is not None else gen["max_tokens"]
 
     t0 = time.perf_counter()
     response = client.chat.completions.create(
@@ -217,7 +219,7 @@ def call_llm(
             {"role": "user",   "content": prompt},
         ],
         temperature=gen["temperature"],
-        max_tokens=gen["max_tokens"],
+        max_tokens=effective_max_tokens,
         top_p=gen["top_p"],
     )
     latency = time.perf_counter() - t0

@@ -23,6 +23,7 @@ api:
 generation:
   temperature: 0.7
   max_tokens: 1024
+  judge_max_tokens: 2048   # judge needs more tokens for 5-section structured output
   top_p: 0.95
 
 debate:

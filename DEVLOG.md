@@ -64,6 +64,10 @@
 - Updated `AGENTS.md`: added research question, 4-phase protocol description, and baseline definitions
 - Documented Debater A locked-position design decision in `AGENTS.md`
 - Fixed `src/utils.py` `format_debate_history()`: replace `"(pending)"` with `"(has not responded yet this round)"` for cleaner debate transcripts
+- Fixed judge parse failures (4/5 in smoke test): two changes made:
+  1. Moved `FINAL ANSWER:` before `CONFIDENCE:` in `prompts/judge.txt` — the judge was stopping naturally after `CONFIDENCE:` without outputting `FINAL ANSWER:`, likely due to token budget running out at the end of the structured response. Moving it earlier ensures the critical parse target is always generated first.
+  2. Added `judge_max_tokens: 2048` in `config.yaml` and wired it through `call_llm()` — the judge's 5-section structured output (CoT analysis, two argument assessments, verdict, confidence) consistently approached the 1024 token limit, causing truncation. `judge_max_tokens` is a separate config key so debater calls are unaffected.
+- Smoke test after fix: 0 parse failures, 5/5 correct (all Phase 1 consensus)
 
 ### 2026-03-15
 - Added `experiments/analyze_results.py`: loads debate_summary.json + baseline JSONs, prints markdown comparison table, saves CSV, generates 4 figures (accuracy/tokens/latency bar charts + confidence vs. accuracy scatter), runs McNemar's test for statistical significance

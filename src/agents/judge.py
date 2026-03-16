@@ -63,6 +63,7 @@ class Judge:
                 "Evaluate arguments based on logic, evidence, and reasoning quality. "
                 "Follow the output format exactly."
             ),
+            max_tokens=self.config["generation"].get("judge_max_tokens", 2048),
         )
 
         return {
