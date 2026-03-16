@@ -46,7 +46,6 @@ Assignment2/
 │   │   ├── debater_b.py   # Opponent agent (Qwen3-8B)
 │   │   └── judge.py       # Judge agent (Llama-3.1-70B)
 │   ├── debate_orchestrator.py
-│   ├── evaluation.py
 │   └── utils.py
 ├── prompts/               # Editable prompt templates
 ├── experiments/           # Run scripts
