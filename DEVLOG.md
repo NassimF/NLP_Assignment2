@@ -44,6 +44,16 @@
   - Bar charts: accuracy, tokens, latency
   - McNemar's test (debate vs. direct_qa, debate vs. self_consistency)
 
+### Step 7b — Experiment Results (partial)
+| Method | Accuracy | Parse Failures | Avg Tokens/Q | Avg Latency/Q | LLM Calls |
+|---|---|---|---|---|---|
+| Direct QA | 0.50 | 9 (4.5%) | 918 | 1.3s | 200 |
+| Self-Consistency | 0.535 | 0 | 11,920 | 16.5s | 2,600 |
+| Debate | TBD | — | — | — | — |
+
+- Self-consistency outperforms Direct QA as expected (13 samples vs 1 call)
+- Full debate run in progress (200 questions) — table will be updated with final numbers
+
 ### Step 8 — Web UI
 - [ ] `ui/app.py` (Streamlit interface)
 
