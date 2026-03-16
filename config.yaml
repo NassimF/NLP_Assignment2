@@ -7,8 +7,8 @@ models:
   # Verify by running: curl http://<host>/v1/models with your API key.
   debater_a: "meta-llama/Llama-3.1-8B-Instruct"
   debater_b: "Qwen/Qwen3-8B"
-  judge:     "meta-llama/Llama-3.1-70B-Instruct"
-  baseline:  "meta-llama/Llama-3.1-70B-Instruct"  # used for Direct QA and Self-Consistency
+  judge:     "Llama-3.1-70B-Instruct-custom"        # confirmed from instructor
+  baseline:  "Llama-3.1-70B-Instruct-custom"        # same server as judge
 
 api:
   # Base URLs and keys are loaded from .env — do not hardcode here.
