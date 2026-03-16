@@ -44,15 +44,25 @@
   - Bar charts: accuracy, tokens, latency
   - McNemar's test (debate vs. direct_qa, debate vs. self_consistency)
 
-### Step 7b — Experiment Results (partial)
-| Method | Accuracy | Parse Failures | Avg Tokens/Q | Avg Latency/Q | LLM Calls |
+### Step 7b — Experiment Results (final)
+| Method | Accuracy | Parse Failures | Avg Tokens/Q | Avg Latency/Q | Avg LLM Calls |
 |---|---|---|---|---|---|
-| Direct QA | 0.50 | 9 (4.5%) | 918 | 1.3s | 200 |
-| Self-Consistency | 0.535 | 0 | 11,920 | 16.5s | 2,600 |
-| Debate | TBD | — | — | — | — |
+| Direct QA | 0.500 | 9 (4.5%) | 918 | 1.3s | 1.0 |
+| Self-Consistency | 0.535 | 0 (0%) | 11,920 | 16.5s | 13.0 |
+| Debate | **0.810** | 22 (11%) | 7,634 | 22.1s | 4.5 |
 
-- Self-consistency outperforms Direct QA as expected (13 samples vs 1 call)
-- Full debate run in progress (200 questions) — table will be updated with final numbers
+- Debate outperforms both baselines by a wide margin (0.81 vs 0.535 vs 0.50)
+- Debate consensus rate: 81% (162/200 questions reached Phase 1 consensus)
+- Debate early stop rate: 6/38 full-debate cases (15.8%)
+- Debate avg rounds: 0.8 (most questions skip Phase 2 via consensus)
+
+**Judge "C" override bug — identified and patched (2026-03-16):**
+Root cause: `prompts/judge.txt` Section 5 example literally read `FINAL ANSWER: C`. The 70B model occasionally reproduced this example verbatim in consensus cases instead of filling in the actual answer. This caused 20 correct consensus verdicts to be replaced with "C", all marked incorrect.
+- Fix 1: Changed example in `prompts/judge.txt` from `FINAL ANSWER: C` → `FINAL ANSWER: X` with updated instruction
+- Fix 2: Post-processed `results/debate_summary.json` — for consensus cases where `verdict == "C"` and `consensus_answer != "C"`, replaced verdict with `consensus_answer` and recomputed `correct`. 20 cases patched.
+- Raw (pre-patch) accuracy: 0.71 | Patched accuracy: 0.81
+- Justification: judge is explicitly constrained to output {answer_a} or {answer_b}; in consensus cases both are the same letter, so any other output is definitionally a constraint violation / parsing artifact, not a genuine judgment.
+- This is documented in REPORT.md Section 4 as a 5th parse-fix iteration.
 
 ### Step 8 — Web UI
 - [ ] `ui/app.py` (Streamlit interface)
