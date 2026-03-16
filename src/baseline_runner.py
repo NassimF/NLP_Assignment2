@@ -42,7 +42,8 @@ class BaselineRunner:
             choices=format_choices(choices),
         )
 
-        llm = call_llm(self.client, self.model, prompt, self.config)
+        llm = call_llm(self.client, self.model, prompt, self.config,
+                       max_tokens=self.config["generation"].get("baseline_max_tokens", 2048))
         answer = extract_final_answer(llm["text"])
 
         result = {
@@ -94,7 +95,8 @@ class BaselineRunner:
         }
 
         for i in range(self.n_samples):
-            llm = call_llm(self.client, self.model, prompt, self.config)
+            llm = call_llm(self.client, self.model, prompt, self.config,
+                           max_tokens=self.config["generation"].get("baseline_max_tokens", 2048))
             answer = extract_final_answer(llm["text"])
             samples.append({
                 "sample_index":      i,

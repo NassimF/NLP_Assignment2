@@ -10,7 +10,9 @@ INSTRUCTIONS:
 1. Think step by step before committing to an answer.
 2. Consider each answer choice and explain why it is correct or incorrect.
 3. Select the single best answer.
-4. End your response with the following line exactly:
-FINAL ANSWER: [single letter only, e.g. C]
+4. End your response with the following line exactly as shown — no markdown, no brackets, no bold:
+FINAL ANSWER: C
+
+Replace C with your chosen letter. Do not write "FINAL ANSWER: [C]" or "**FINAL ANSWER: C**". Write only the plain text line above.
 
 Your response:

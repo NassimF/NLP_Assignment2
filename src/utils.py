@@ -174,12 +174,49 @@ def extract_current_answer(text: str) -> str | None:
 
 def extract_final_answer(text: str) -> str | None:
     """
-    Parse 'FINAL ANSWER: X' from judge or direct QA responses.
-    Returns the letter (e.g. 'C') or None if not found.
+    Parse the final answer letter from judge or direct QA responses.
+
+    Search order:
+      1. Look for FINAL ANSWER / Answer pattern in the raw text (before
+         stripping <think> blocks) — catches cases where the model puts
+         the answer inside a <think> block and only emits a bare letter
+         outside it.
+      2. Same search in the stripped text.
+      3. Fallback: if the entire stripped response is a single A-E letter.
+
+    Handles format variants:
+      'FINAL ANSWER: C', 'FINAL ANSWER: [C]',
+      '**Final Answer:** C', '**Final Answer**: C',
+      '**Answer:** C', '**Final Answer:** [C]'
     """
-    text = strip_think(text)
-    match = re.search(r"FINAL ANSWER:\s*([A-E])", text, re.IGNORECASE)
-    return match.group(1).upper() if match else None
+    _PATTERN = r"(?:final\s+)?answer[*\s]*:[*\s]*\[?([A-E])\]?"
+
+    # 1. Search raw text first (before stripping think blocks)
+    match = re.search(_PATTERN, text, re.IGNORECASE)
+    if match:
+        return match.group(1).upper()
+
+    # 2. Search stripped text
+    stripped = strip_think(text)
+    match = re.search(_PATTERN, stripped, re.IGNORECASE)
+    if match:
+        return match.group(1).upper()
+
+    # 3. Fallback: "the correct answer is X" / "correct answer is X"
+    match = re.search(
+        r"(?:the\s+)?correct\s+answer\s+is\s+\[?([A-E])\]?",
+        stripped, re.IGNORECASE
+    )
+    if match:
+        return match.group(1).upper()
+
+    # 4. Fallback: entire response is a bare letter (model answered
+    #    inside <think> and only emitted the letter outside)
+    bare = stripped.strip()
+    if re.fullmatch(r"[A-E]", bare, re.IGNORECASE):
+        return bare.upper()
+
+    return None
 
 
 def extract_confidence(text: str) -> int | None:
