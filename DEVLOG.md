@@ -56,6 +56,8 @@
 - Debate early stop rate: 6/38 full-debate cases (15.8%)
 - Debate avg rounds: 0.8 (most questions skip Phase 2 via consensus)
 
+> **NOTE FOR REPORT.md**: Add this comparison table to Section 2.2 (Results). Also note the statistical significance (McNemar's test) once `analyze_results.py` is run. Debate accuracy (0.81) vs Self-Consistency (0.535) is a large gap — discuss that high consensus rate (81%) means the 70B judge is mostly confirming 8B model agreement, not independently reasoning. The accuracy gain over Direct QA shows the value of the judge's structured evaluation even on consensus cases.
+
 **Judge "C" override bug — identified and patched (2026-03-16):**
 Root cause: `prompts/judge.txt` Section 5 example literally read `FINAL ANSWER: C`. The 70B model occasionally reproduced this example verbatim in consensus cases instead of filling in the actual answer. This caused 20 correct consensus verdicts to be replaced with "C", all marked incorrect.
 - Fix 1: Changed example in `prompts/judge.txt` from `FINAL ANSWER: C` → `FINAL ANSWER: X` with updated instruction
