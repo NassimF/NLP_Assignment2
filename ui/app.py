@@ -60,6 +60,61 @@ def format_choices(choices: dict) -> str:
     return "\n".join(f"**{k})** {v}" for k, v in choices.items())
 
 
+def _render_panel_verdict(judge: dict):
+    """Render Phase 3 for panel (multi-judge) logs."""
+    r1 = judge.get("panel_r1_results", [])
+    r2 = judge.get("panel_r2_results")
+    deliberated = judge.get("panel_deliberated", False)
+    unanimous_r1 = judge.get("panel_unanimous_r1", True)
+
+    st.markdown("### Phase 3 — Judge Panel Verdict")
+
+    # ── Panel summary metrics ──────────────────────────────────────────────────
+    pm1, pm2, pm3, pm4 = st.columns(4)
+    pm1.metric("Panel Verdict", judge.get("final_answer") or "None")
+    pm2.metric("Avg Confidence", confidence_bar(judge.get("confidence")))
+    pm3.metric("R1 Unanimous", "Yes" if unanimous_r1 else "No")
+    pm4.metric("Deliberated", "Yes" if deliberated else "No")
+
+    st.divider()
+
+    # ── Round 1: individual judge verdicts ────────────────────────────────────
+    st.markdown("#### Round 1 — Independent Verdicts")
+    if not unanimous_r1:
+        st.warning("Judges disagreed in Round 1 — deliberation was triggered.")
+    else:
+        st.success("All judges agreed in Round 1 — no deliberation needed.")
+
+    cols = st.columns(len(r1))
+    for i, (col, jr) in enumerate(zip(cols, r1)):
+        with col:
+            verdict = jr.get("final_answer") or "None"
+            conf    = jr.get("confidence")
+            st.markdown(f"**Judge {jr.get('judge_num', i+1)}**")
+            st.metric("Verdict", verdict)
+            st.markdown(f"Confidence: {confidence_bar(conf)}")
+            with st.expander("Show reasoning"):
+                st.markdown(jr.get("raw_response", "—"))
+
+    # ── Round 2: deliberation ──────────────────────────────────────────────────
+    if r2:
+        st.divider()
+        st.markdown("#### Round 2 — Deliberation")
+        cols2 = st.columns(len(r2))
+        for i, (col, jr) in enumerate(zip(cols2, r2)):
+            with col:
+                r1_verdict = r1[i].get("final_answer") or "None"
+                r2_verdict = jr.get("final_answer") or "None"
+                changed    = r1_verdict != r2_verdict
+                st.markdown(f"**Judge {jr.get('judge_num', i+1)}**")
+                st.metric("Final Verdict", r2_verdict,
+                          delta=f"changed from {r1_verdict}" if changed else "unchanged",
+                          delta_color="normal" if changed else "off")
+                st.markdown(f"Confidence: {confidence_bar(jr.get('confidence'))}")
+                with st.expander("Show deliberation reasoning"):
+                    st.markdown(jr.get("raw_response", "—"))
+
+
 def render_debate_log(log: dict):
     """Render a full debate log in the UI."""
 
@@ -109,17 +164,22 @@ def render_debate_log(log: dict):
                     st.markdown(r.get("debater_b", "—"))
 
     # ── Phase 3: Judge verdict ─────────────────────────────────────────────────
-    st.markdown("### Phase 3 — Judge Verdict")
     judge = log.get("judge", {})
-    jc1, jc2 = st.columns([2, 1])
-    with jc1:
-        with st.expander("Show full judge reasoning", expanded=True):
-            st.markdown(judge.get("raw_response", "—"))
-    with jc2:
-        st.metric("Final Answer", judge.get("final_answer") or "None")
-        st.markdown(f"**Confidence:** {confidence_bar(judge.get('confidence'))}")
-        st.metric("Tokens used", judge.get("total_tokens", "—"))
-        st.metric("Latency", f"{judge.get('latency_seconds', 0):.1f}s")
+    is_panel = bool(judge.get("panel_r1_results"))
+
+    if is_panel:
+        _render_panel_verdict(judge)
+    else:
+        st.markdown("### Phase 3 — Judge Verdict")
+        jc1, jc2 = st.columns([2, 1])
+        with jc1:
+            with st.expander("Show full judge reasoning", expanded=True):
+                st.markdown(judge.get("raw_response", "—"))
+        with jc2:
+            st.metric("Final Answer", judge.get("final_answer") or "None")
+            st.markdown(f"**Confidence:** {confidence_bar(judge.get('confidence'))}")
+            st.metric("Tokens used", judge.get("total_tokens", "—"))
+            st.metric("Latency", f"{judge.get('latency_seconds', 0):.1f}s")
 
     # ── Usage summary ──────────────────────────────────────────────────────────
     st.divider()
@@ -203,24 +263,29 @@ elif mode == "📂 Browse Logs":
 
     # Summary stats
     total = len(debate_logs)
-    logs_data = [load_log(p) for p in debate_logs]
-    correct = sum(1 for d in logs_data if d.get("correct", False))
-    consensus = sum(1 for d in logs_data if d.get("consensus", False))
+    logs_data  = [load_log(p) for p in debate_logs]
+    correct    = sum(1 for d in logs_data if d.get("correct", False))
+    consensus  = sum(1 for d in logs_data if d.get("consensus", False))
+    panel_logs = [d for d in logs_data if d.get("judge", {}).get("panel_r1_results")]
+    deliberated = sum(1 for d in panel_logs if d.get("judge", {}).get("panel_deliberated"))
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Total Debates", total)
     c2.metric("Accuracy", f"{correct/total:.1%}" if total else "—")
     c3.metric("Consensus Rate", f"{consensus/total:.1%}" if total else "—")
     c4.metric("Avg Rounds", f"{sum(len(d.get('rounds',[])) for d in logs_data)/total:.1f}" if total else "—")
+    c5.metric("Panel Logs", f"{len(panel_logs)} ({deliberated} deliberated)")
 
     st.divider()
 
     # Filter controls
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         filter_correct = st.selectbox("Filter by result", ["All", "Correct only", "Incorrect only"])
     with col2:
         filter_consensus = st.selectbox("Filter by consensus", ["All", "Consensus", "Full debate"])
+    with col3:
+        filter_panel = st.selectbox("Filter by judge type", ["All", "Panel only", "Single judge only"])
 
     filtered = logs_data
     if filter_correct == "Correct only":
@@ -231,6 +296,10 @@ elif mode == "📂 Browse Logs":
         filtered = [d for d in filtered if d.get("consensus")]
     elif filter_consensus == "Full debate":
         filtered = [d for d in filtered if not d.get("consensus")]
+    if filter_panel == "Panel only":
+        filtered = [d for d in filtered if d.get("judge", {}).get("panel_r1_results")]
+    elif filter_panel == "Single judge only":
+        filtered = [d for d in filtered if not d.get("judge", {}).get("panel_r1_results")]
 
     if not filtered:
         st.info("No logs match the current filters.")
@@ -276,10 +345,13 @@ elif mode == "📊 Results":
     st.markdown("### Figures")
 
     figures = {
-        "Accuracy by Method":  fig_dir / "accuracy_by_method.png",
-        "Token Usage by Method": fig_dir / "tokens_by_method.png",
-        "Latency by Method":   fig_dir / "latency_by_method.png",
-        "Confidence vs. Accuracy (Debate)": fig_dir / "confidence_vs_accuracy.png",
+        "Accuracy by Method":                   fig_dir / "accuracy_by_method.png",
+        "Token Usage by Method":                fig_dir / "tokens_by_method.png",
+        "Latency by Method":                    fig_dir / "latency_by_method.png",
+        "Confidence vs. Accuracy (Debate)":     fig_dir / "confidence_vs_accuracy.png",
+        "Panel vs. Single Judge Accuracy":      fig_dir / "panel_accuracy_comparison.png",
+        "Panel Disagreement Analysis":          fig_dir / "panel_disagreement_analysis.png",
+        "Panel Disagreement by Rounds":         fig_dir / "panel_disagreement_by_rounds.png",
     }
 
     available = {k: v for k, v in figures.items() if v.exists()}
