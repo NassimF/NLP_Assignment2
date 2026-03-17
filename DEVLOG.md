@@ -67,13 +67,20 @@ Root cause: `prompts/judge.txt` Section 5 example literally read `FINAL ANSWER: 
 - This is documented in REPORT.md Section 4 as a 5th parse-fix iteration.
 
 ### Step 8 — Web UI
-- [ ] `ui/app.py` (Streamlit interface)
+- [x] `ui/app.py` (Streamlit interface)
+- [x] Updated to display multi-judge panel logs (R1/R2 verdicts, deliberation status)
 
 ### Step 9 — Blog Post
-- [ ] `REPORT.md`
+- [x] `REPORT.md` — all sections complete (Methodology, Experiments, Analysis, Prompt Engineering, Appendix)
+- [x] Section 5 added for bonus multi-judge panel (architecture + result placeholders)
 
 ### Step 10 — Bonus (optional)
-- [ ] Multi-judge panel
+- [x] Multi-judge panel implemented (`src/agents/judge_panel.py`)
+- [x] Deliberation prompt (`prompts/judge_deliberation.txt`)
+- [x] Experiment runner (`experiments/run_debate_panel.py`)
+- [x] Analysis script (`experiments/analyze_panel_results.py`)
+- [ ] Full 200-question panel run — in progress
+- [ ] Fill in REPORT.md Section 5.2 and 5.3 with actual results
 
 ---
 
