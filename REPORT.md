@@ -42,6 +42,9 @@ The judge receives the full debate transcript (initial positions + all rounds) a
 #### Phase 4 — Evaluation
 The judge's verdict is compared against the ground-truth answer. All intermediate data (initial positions, per-round arguments, judge reasoning, verdict, ground truth) is saved as JSON for every run.
 
+![Pipeline Flowchart](flowchart.png)
+*Figure: Single Judge (left) and Multi-Judge Panel (right) debate pipeline flowcharts.*
+
 ### 1.4 Model Choices
 
 | Role | Model | Rationale |

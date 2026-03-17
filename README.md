@@ -33,6 +33,10 @@ python data/download_data.py
 
 ---
 
+## Pipeline Overview
+
+![Pipeline Flowchart](flowchart.png)
+
 ## Project Structure
 
 ```
