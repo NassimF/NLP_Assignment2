@@ -244,6 +244,12 @@ The multi-judge panel replaces the single 70B judge in Phase 3 with a jury of 3 
 | Deliberation Rate | — | 7.5% (15/200) |
 | McNemar p (vs single judge) | ref | < 0.001 *** |
 
+![Panel vs. Single Judge Accuracy](results/figures/panel_accuracy_comparison.png)
+
+![Panel Disagreement Analysis](results/figures/panel_disagreement_analysis.png)
+
+![Panel Disagreement Rate by Debate Length](results/figures/panel_disagreement_by_rounds.png)
+
 The panel achieves 0.920 accuracy versus 0.810 for the single judge — an 11 percentage point improvement that is statistically significant (McNemar's test, p < 0.001). The cost is 1.7× more tokens per question (13,097 vs 7,634) but only 1.15× more latency (25.5s vs 22.1s), as the three independent judge calls overlap on short consensus transcripts.
 
 **Panel-specific breakdown:**
