@@ -234,26 +234,36 @@ The multi-judge panel replaces the single 70B judge in Phase 3 with a jury of 3 
 
 ### 5.2 Results
 
-> ⚠️ *Results pending — full 200-question panel run in progress. To be filled in after run completes.*
-
 | Metric | Single Judge | Panel (3 judges) |
 |---|---|---|
-| Accuracy | 0.810 | — |
-| Parse Failures | 11.0% | — |
-| Avg Tokens/Q | 7,634 | — |
-| Avg Latency/Q | 22.1s | — |
-| R1 Disagreement Rate | — | — |
-| Deliberation Rate | — | — |
+| Accuracy | 0.810 | **0.920** |
+| Parse Failures | 11.0% | 1.0% |
+| Avg Tokens/Q | 7,634 | 13,097 |
+| Avg Latency/Q | 22.1s | 25.5s |
+| R1 Disagreement Rate | — | 7.5% (15/200) |
+| Deliberation Rate | — | 7.5% (15/200) |
+| McNemar p (vs single judge) | ref | < 0.001 *** |
+
+The panel achieves 0.920 accuracy versus 0.810 for the single judge — an 11 percentage point improvement that is statistically significant (McNemar's test, p < 0.001). The cost is 1.7× more tokens per question (13,097 vs 7,634) but only 1.15× more latency (25.5s vs 22.1s), as the three independent judge calls overlap on short consensus transcripts.
+
+**Panel-specific breakdown:**
+
+| Group | N | Accuracy |
+|---|---|---|
+| R1 unanimous (all 3 judges agreed) | 185 | 0.930 |
+| R1 disagreed (deliberation triggered) | 15 | 0.800 |
+
+Of the 15 deliberated cases, 4 verdicts changed in Round 2 (26.7%): 3 were wrong→correct and 1 was correct→wrong, for a net gain of +2 correct answers from deliberation.
 
 ### 5.3 Analysis
 
-> ⚠️ *Analysis pending — to be completed after full run.*
+**Why does the panel outperform the single judge?** The primary driver is variance reduction. All 3 panel judges use the same 70B model, but at temperature=0.7 each call independently samples from the model's distribution — meaning three judges can reach different conclusions from the same transcript. The majority vote aggregates these independent samples, smoothing out cases where a single judge would have been swayed by a misleading but coherent argument (the failure mode illustrated by Case 1 in Section 3.1). This is the same mechanism that makes Self-Consistency outperform Direct QA — but applied at the judge level rather than the answer level.
 
-Key questions to answer once results are available:
-1. Does the panel improve accuracy over the single judge, and is the difference statistically significant (McNemar's test)?
-2. What fraction of questions trigger R1 disagreement, and how does accuracy compare between unanimous-R1 and disagreed-R1 cases?
-3. Of the deliberated cases, how often does the panel verdict change in Round 2? How many of those changes are wrong→correct vs. correct→wrong?
-4. Does R1 disagreement rate correlate with question difficulty (proxied by number of debate rounds)?
+**Disagreement correlates strongly with question difficulty.** On consensus questions (0 debate rounds), only 1.8% of cases triggered R1 judge disagreement. On full-debate questions (5 rounds), 35.3% triggered disagreement. This confirms that the panel is most uncertain precisely where the debate itself was most contested — the judges are appropriately sensitive to transcript ambiguity.
+
+**Deliberation provides a modest but positive signal.** Of 15 deliberated cases, 3 wrong→correct changes outweigh 1 correct→wrong change for a net +2 correct answers. With only 15 deliberated cases this is a small sample, but the direction is positive: judges reconsidering their verdicts after seeing peers' reasoning tend to move toward the correct answer more often than away from it. The 73.3% of cases where the verdict did not change in R2 indicates judges generally hold their position under peer scrutiny — deliberation is not simply herding toward the most confident peer.
+
+**Cost-accuracy tradeoff.** The panel uses 1.7× more tokens than the single judge but achieves +11% accuracy. For comparison, Self-Consistency used 1.6× more tokens than the single judge (11,921 vs 7,634) but achieved only +2.5% accuracy (0.535 vs 0.500 Direct QA baseline). The panel delivers substantially better returns per additional token than Self-Consistency.
 
 ---
 
