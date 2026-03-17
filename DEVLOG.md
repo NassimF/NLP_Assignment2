@@ -77,6 +77,31 @@ Root cause: `prompts/judge.txt` Section 5 example literally read `FINAL ANSWER: 
 
 ---
 
+### Multi-Judge Panel — Architecture Notes
+
+The panel replaces the single judge in Phase 3 with 3 judges and a two-round deliberation process. The debaters (A and B) are unchanged — they still argue for up to 5 rounds as before. Only Phase 3 is affected.
+
+**Round 1 — Independent evaluation**
+All 3 judges receive the exact same input as the original single judge: the full debate transcript, the debaters' final positions, and the standard `judge.txt` prompt. They evaluate independently with no knowledge of each other. Each produces a structured verdict (CoT analysis, argument assessment, final answer, confidence score).
+
+Even though all 3 judges are the same model (Llama-3.1-70B) on the same endpoint, they naturally produce different verdicts because of `temperature=0.7`. At this temperature the model samples from a probability distribution over tokens rather than always picking the most likely one — so three independent calls to the same model on the same input will follow slightly different reasoning paths and can arrive at different conclusions. This is the same mechanism that makes Self-Consistency work.
+
+**Round 2 — Deliberation (triggered only on R1 disagreement)**
+If all 3 judges agreed in Round 1, deliberation is skipped and we go straight to the majority vote. If any judge disagreed, each judge is given a new prompt (`judge_deliberation.txt`) containing:
+- The original debate transcript (same as Round 1)
+- Their own Round 1 full reasoning and verdict
+- The other two judges' Round 1 full reasoning and verdicts
+
+Each judge can then compare what they thought with what their peers thought, identify where they diverged, and either maintain or revise their verdict. There is only one deliberation round — no further back-and-forth after Round 2.
+
+**Final verdict**
+Majority vote of the 3 Round 2 verdicts (or Round 1 if no deliberation occurred). In the case of a 3-way split after deliberation, the `Counter.most_common(1)` call picks whichever answer appeared first in the tie — a rare edge case.
+
+**Why not use different models for each judge?**
+Using different models (e.g. GPT-4o as one of the judges) would confound the results: any accuracy gain could come from the stronger model rather than the deliberation process itself. Keeping the same model isolates the effect of deliberation. A separate "3× same model, no deliberation" baseline would be needed to fully isolate this — but for the bonus the deliberation-vs-single-judge comparison is the primary question.
+
+---
+
 ---
 
 ## ⏭️ Next Steps (after debate run finishes)

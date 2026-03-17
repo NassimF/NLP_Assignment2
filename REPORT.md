@@ -218,6 +218,45 @@ The final parser uses a multi-fallback strategy: search raw text → search stri
 
 ---
 
+## 5. Bonus: Multi-Judge Panel
+
+### 5.1 Architecture
+
+The multi-judge panel replaces the single 70B judge in Phase 3 with a jury of 3 judges and a two-round deliberation process, inspired by VERDICT (Kalra et al., 2025). Phases 1 and 2 (debaters) are unchanged.
+
+**Why 3 judges using the same model?** All 3 panel judges use the same Llama-3.1-70B endpoint. This is a deliberate experimental design choice: using different models (e.g. GPT-4o as one judge) would confound the results — any accuracy gain could reflect the stronger model rather than the deliberation process. Keeping the same model isolates the effect of deliberation. Variation between judges is produced naturally by `temperature=0.7`, which samples from a probability distribution over tokens rather than greedily selecting the most likely one. Three independent calls to the same model on the same input will follow slightly different reasoning paths and can arrive at different conclusions — the same mechanism that underlies Self-Consistency (Wang et al., 2023).
+
+**Round 1 — Independent evaluation:** All 3 judges receive the exact same input as the original single judge: the full debate transcript, the debaters' final positions, and the standard `judge.txt` prompt. They evaluate independently with no knowledge of each other, each producing a structured verdict with CoT analysis, argument assessment, final answer, and confidence score.
+
+**Round 2 — Deliberation (triggered only on R1 disagreement):** If all 3 judges agreed in Round 1, deliberation is skipped and the unanimous verdict is returned directly. If any judge disagreed, each judge receives a new prompt (`judge_deliberation.txt`) containing: (a) the original debate transcript, (b) their own Round 1 full reasoning and verdict, and (c) the other two judges' Round 1 full reasoning and verdicts. Each judge can compare their initial assessment with their peers', identify where they diverged, and either maintain or revise their verdict. There is only one deliberation round.
+
+**Final verdict:** Majority vote of the 3 Round 2 verdicts (or Round 1 if no deliberation was triggered).
+
+### 5.2 Results
+
+> ⚠️ *Results pending — full 200-question panel run in progress. To be filled in after run completes.*
+
+| Metric | Single Judge | Panel (3 judges) |
+|---|---|---|
+| Accuracy | 0.810 | — |
+| Parse Failures | 11.0% | — |
+| Avg Tokens/Q | 7,634 | — |
+| Avg Latency/Q | 22.1s | — |
+| R1 Disagreement Rate | — | — |
+| Deliberation Rate | — | — |
+
+### 5.3 Analysis
+
+> ⚠️ *Analysis pending — to be completed after full run.*
+
+Key questions to answer once results are available:
+1. Does the panel improve accuracy over the single judge, and is the difference statistically significant (McNemar's test)?
+2. What fraction of questions trigger R1 disagreement, and how does accuracy compare between unanimous-R1 and disagreed-R1 cases?
+3. Of the deliberated cases, how often does the panel verdict change in Round 2? How many of those changes are wrong→correct vs. correct→wrong?
+4. Does R1 disagreement rate correlate with question difficulty (proxied by number of debate rounds)?
+
+---
+
 ## Appendix: Full Prompt Templates
 
 ### A. Initial Position (`prompts/initial_position.txt`)
@@ -346,7 +385,65 @@ On a scale of 1 to 5, how confident are you in this verdict?
 CONFIDENCE: [1-5]
 ```
 
-### E. Direct QA (`prompts/direct_qa.txt`)
+### E. Judge Deliberation — Round 2 (`prompts/judge_deliberation.txt`)
+
+```
+You are Judge {judge_num} of {num_judges} on an impartial evaluation panel. You have already submitted an initial verdict. You are now in the deliberation round — you have access to your peers' independent evaluations and must render your final verdict.
+
+QUESTION:
+{question}
+
+ANSWER CHOICES:
+{choices}
+
+FULL DEBATE TRANSCRIPT:
+{debate_transcript}
+
+DEBATER POSITIONS:
+- Debater A is defending answer: {answer_a}
+- Debater B is defending answer: {answer_b}
+
+{consensus_note}
+YOUR ROUND 1 ASSESSMENT:
+{self_evaluation}
+
+PEER JUDGE EVALUATIONS (from Round 1):
+{peer_evaluations}
+
+DELIBERATION INSTRUCTIONS:
+Review the debate transcript, your own Round 1 assessment, and your peers' assessments above. Consider whether their reasoning reveals anything you may have weighted differently. You may maintain or revise your verdict — but your final answer must still be either {answer_a} or {answer_b}.
+
+IMPORTANT: Write all required tags (FINAL ANSWER, CONFIDENCE) as plain text exactly as shown — no markdown, no bold, no brackets around the letter.
+IMPORTANT: Your FINAL ANSWER must be either {answer_a} or {answer_b}. Do not select any other answer.
+
+### 1. Chain-of-Thought Analysis
+Think step by step. Evaluate the quality of each debater's reasoning. Note any points your peers raised that are relevant.
+
+### 2. Debater A — Argument Assessment
+- Strongest argument: [identify the single most compelling point made by Debater A]
+- Weakest argument: [identify the least convincing or most flawed point made by Debater A]
+
+### 3. Debater B — Argument Assessment
+- Strongest argument: [identify the single most compelling point made by Debater B]
+- Weakest argument: [identify the least convincing or most flawed point made by Debater B]
+
+### 4. Verdict
+Based on the quality of reasoning presented, select the answer defended by the more persuasive debater: [Debater A / Debater B]
+
+The correct answer is: [single letter only, e.g. C]
+
+### 5. Final Verdict
+Write your chosen answer letter as plain text — no brackets, no bold, no markdown. Replace X with your actual answer letter:
+FINAL ANSWER: X
+
+### 6. Confidence Score
+On a scale of 1 to 5, how confident are you in this verdict?
+(1 = very uncertain, 3 = moderately confident, 5 = very confident)
+
+CONFIDENCE: [1-5]
+```
+
+### F. Direct QA (`prompts/direct_qa.txt`)
 
 ```
 You are an expert at answering multiple-choice questions. Answer the following question using careful step-by-step reasoning.
