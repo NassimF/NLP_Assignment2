@@ -14,6 +14,7 @@ import os
 import re
 import time
 import yaml
+import random
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -236,6 +237,8 @@ def call_llm(
     config: dict,
     system_prompt: str = "You are a helpful assistant participating in a structured debate.",
     max_tokens: int | None = None,
+    max_retries: int = 5,
+    base_delay: float = 10.0,
 ) -> dict:
     """
     Make a single chat completion call and return a result dict with:
@@ -244,31 +247,48 @@ def call_llm(
       - completion_tokens: output token count
       - total_tokens     : total token count
       - latency_seconds  : wall-clock time for the API call
+
+    Retries up to max_retries times on connection errors or timeouts,
+    with exponential backoff + jitter between attempts.
     """
     gen = config["generation"]
     effective_max_tokens = max_tokens if max_tokens is not None else gen["max_tokens"]
 
-    t0 = time.perf_counter()
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": prompt},
-        ],
-        temperature=gen["temperature"],
-        max_tokens=effective_max_tokens,
-        top_p=gen["top_p"],
-    )
-    latency = time.perf_counter() - t0
+    last_exc = None
+    for attempt in range(max_retries):
+        try:
+            t0 = time.perf_counter()
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": prompt},
+                ],
+                temperature=gen["temperature"],
+                max_tokens=effective_max_tokens,
+                top_p=gen["top_p"],
+            )
+            latency = time.perf_counter() - t0
 
-    text = response.choices[0].message.content or ""
-    text = strip_think(text.strip())
+            text = response.choices[0].message.content or ""
+            text = strip_think(text.strip())
 
-    usage = response.usage
-    return {
-        "text":              text,
-        "prompt_tokens":     usage.prompt_tokens     if usage else None,
-        "completion_tokens": usage.completion_tokens if usage else None,
-        "total_tokens":      usage.total_tokens      if usage else None,
-        "latency_seconds":   round(latency, 3),
-    }
+            usage = response.usage
+            return {
+                "text":              text,
+                "prompt_tokens":     usage.prompt_tokens     if usage else None,
+                "completion_tokens": usage.completion_tokens if usage else None,
+                "total_tokens":      usage.total_tokens      if usage else None,
+                "latency_seconds":   round(latency, 3),
+            }
+
+        except Exception as e:
+            last_exc = e
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 2)
+                print(f"\n  [RETRY {attempt + 1}/{max_retries - 1}] {type(e).__name__}: {e} — waiting {delay:.1f}s")
+                time.sleep(delay)
+            else:
+                print(f"\n  [FAILED] All {max_retries} attempts failed. Last error: {e}")
+
+    raise last_exc
