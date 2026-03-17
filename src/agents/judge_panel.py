@@ -191,7 +191,13 @@ class JudgePanel:
     ) -> dict:
         """Round 2: this judge sees the other judges' R1 reasoning and reconsiders."""
         judge_num = judge_idx + 1
-        peers = [r for i, r in enumerate(r1_results) if i != judge_idx]
+        self_r1 = r1_results[judge_idx]
+        peers   = [r for i, r in enumerate(r1_results) if i != judge_idx]
+
+        self_block = (
+            f"{self_r1['raw_response']}\n"
+            f"Verdict: {self_r1['final_answer'] or 'unclear'}"
+        )
 
         peer_block = ""
         for p in peers:
@@ -212,6 +218,7 @@ class JudgePanel:
             answer_a=answer_a or "?",
             answer_b=answer_b or "?",
             consensus_note=consensus_note,
+            self_evaluation=self_block,
             peer_evaluations=peer_block.strip(),
         )
 

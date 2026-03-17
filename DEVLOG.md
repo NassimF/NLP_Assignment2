@@ -84,6 +84,20 @@ Root cause: `prompts/judge.txt` Section 5 example literally read `FINAL ANSWER: 
 
 ---
 
+### Phase 2 Clarification — How Rounds Work
+
+In Phase 1, both debaters receive only the question and form their initial answers independently — neither sees the other's response.
+
+If there is no consensus, Phase 2 begins. Debater A does **not** re-answer the question — it is locked to its Phase 1 answer for the entire debate. What changes is that it now constructs arguments *defending* that position.
+
+So in Phase 2 Round 1:
+- **Debater A** gets: question + its locked position + empty debate history → constructs an argument defending its Phase 1 answer
+- **Debater B** gets: question + Debater A's Round 1 argument → constructs a counterargument defending its own Phase 1 answer
+
+The answers are fixed from Phase 1. Phase 2 is purely about building arguments and rebuttals — not picking new answers. Debater B can switch its reported answer across rounds (it's the free-form opponent), but Debater A's answer is hardcoded into the prompt and cannot change.
+
+---
+
 ### Multi-Judge Panel — Architecture Notes
 
 The panel replaces the single judge in Phase 3 with 3 judges and a two-round deliberation process. The debaters (A and B) are unchanged — they still argue for up to 5 rounds as before. Only Phase 3 is affected.

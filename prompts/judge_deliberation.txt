@@ -14,11 +14,14 @@ DEBATER POSITIONS:
 - Debater B is defending answer: {answer_b}
 
 {consensus_note}
+YOUR ROUND 1 ASSESSMENT:
+{self_evaluation}
+
 PEER JUDGE EVALUATIONS (from Round 1):
 {peer_evaluations}
 
 DELIBERATION INSTRUCTIONS:
-Review the debate transcript and your peers' assessments above. Consider whether their reasoning reveals anything you may have weighted differently. You may maintain or revise your verdict — but your final answer must still be either {answer_a} or {answer_b}.
+Review the debate transcript, your own Round 1 assessment, and your peers' assessments above. Consider whether their reasoning reveals anything you may have weighted differently. You may maintain or revise your verdict — but your final answer must still be either {answer_a} or {answer_b}.
 
 IMPORTANT: Write all required tags (FINAL ANSWER, CONFIDENCE) as plain text exactly as shown — no markdown, no bold, no brackets around the letter.
 IMPORTANT: Your FINAL ANSWER must be either {answer_a} or {answer_b}. Do not select any other answer.
