@@ -3,7 +3,7 @@
 **Course**: LLM & Agentic Systems — Graduate Course
 **Due**: March 16th, 2026
 
-A multi-agent debate system where two LLM agents argue opposing sides of a question and a third LLM judge renders a verdict. Evaluated on ARC-Challenge (Commonsense QA).
+A multi-agent debate system where two LLM agents argue opposing sides of a question and a third LLM judge renders a verdict. Includes a bonus multi-judge panel mode with optional deliberation. Evaluated on ARC-Challenge (Commonsense QA).
 
 ---
 
@@ -44,7 +44,8 @@ Assignment2/
 │   ├── agents/
 │   │   ├── debater_a.py   # Proponent agent (Llama-3.1-8B)
 │   │   ├── debater_b.py   # Opponent agent (Qwen3-8B)
-│   │   └── judge.py       # Judge agent (Llama-3.1-70B)
+│   │   ├── judge.py       # Single judge agent (Llama-3.1-70B)
+│   │   └── judge_panel.py # Multi-judge panel with deliberation (bonus)
 │   ├── debate_orchestrator.py
 │   └── utils.py
 ├── prompts/               # Editable prompt templates
@@ -60,7 +61,7 @@ Assignment2/
 ## Running Experiments
 
 ```bash
-# Run the full debate pipeline
+# Run the full debate pipeline (single judge)
 python experiments/run_debate.py
 
 # Run baselines (Direct QA + Self-Consistency)
@@ -68,7 +69,15 @@ python experiments/run_baselines.py
 
 # Generate results tables and figures
 python experiments/analyze_results.py
+
+# Bonus: Run debate with multi-judge panel (3 judges + deliberation)
+python experiments/run_debate_panel.py
+
+# Bonus: Analyze panel results and generate panel figures
+python experiments/analyze_panel_results.py
 ```
+
+Panel settings (number of judges, deliberation on/off) are configured in `config.yaml` under the `panel:` section.
 
 ## Running the Web UI
 
